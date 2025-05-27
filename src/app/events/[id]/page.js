@@ -11,7 +11,7 @@ export default async function EventDetailPage({ params }) {
   
     try {
       const res = await fetch(`http://localhost:3000/api/events/${params.id}`, {
-        cache: "no-store", // Ensure fresh data
+        cache: "no-store", 
       })
   
       if (!res.ok) {
@@ -51,7 +51,6 @@ export default async function EventDetailPage({ params }) {
   
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        {/* Header with background */}
         <div className="bg-white shadow-sm border-b">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <Link
@@ -124,7 +123,6 @@ export default async function EventDetailPage({ params }) {
                 </CardContent>
               </Card>
   
-              {/* Additional Details */}
               {(event.organizer || event.website || event.tags) && (
                 <Card className="border-0 shadow-lg">
                   <CardHeader>
@@ -176,7 +174,6 @@ export default async function EventDetailPage({ params }) {
   
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Date & Time Card */}
               <Card className="border-0 shadow-lg">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -201,7 +198,6 @@ export default async function EventDetailPage({ params }) {
                 </CardContent>
               </Card>
   
-              {/* Location Card */}
               <Card className="border-0 shadow-lg">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -225,7 +221,6 @@ export default async function EventDetailPage({ params }) {
                 </CardContent>
               </Card>
   
-              {/* Attendees Card */}
               {event.attendees && (
                 <Card className="border-0 shadow-lg">
                   <CardHeader className="pb-4">
@@ -241,7 +236,6 @@ export default async function EventDetailPage({ params }) {
                 </Card>
               )}
   
-              {/* Registration Card */}
               <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                 <CardContent className="pt-6">
                   <div className="text-center space-y-4">

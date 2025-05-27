@@ -57,12 +57,10 @@ export default function EventsPage() {
       )
     }
 
-    // Location filter
     if (filters.location) {
       filtered = filtered.filter((event) => event.location === filters.location)
     }
 
-    // Category filter
     if (filters.category) {
       filtered = filtered.filter((event) => {
         if (!event.tags) return false
@@ -71,7 +69,6 @@ export default function EventsPage() {
       })
     }
 
-    // Date range filter
     if (filters.dateRange) {
       const now = new Date()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
