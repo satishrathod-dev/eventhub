@@ -2,16 +2,27 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
-import { Skeleton } from "../../components/ui/skeleton"
-import { Alert, AlertDescription } from "../../components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { EventFilters } from "@/components/event-filters"
 import { Calendar, MapPin, Clock, Users } from "lucide-react"
 
 export default function EventsPage() {
-  const [events, setEvents] = useState([])
+  const [allEvents, setAllEvents] = useState([])
+  const [filteredEvents, setFilteredEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [filters, setFilters] = useState({
+    search: "",
+    location: "",
+    category: "",
+    dateRange: "",
+    priceRange: "",
+    organizer: "",
+    status: "",
+  })
 
   useEffect(() => {
     async function fetchEvents() {
@@ -19,7 +30,8 @@ export default function EventsPage() {
         const res = await fetch("/api/events")
         if (!res.ok) throw new Error("Failed to fetch events")
         const data = await res.json()
-        setEvents(data)
+        setAllEvents(data)
+        setFilteredEvents(data)
       } catch (err) {
         setError(err.message)
       } finally {
@@ -29,6 +41,130 @@ export default function EventsPage() {
 
     fetchEvents()
   }, [])
+
+  // Filter events based on active filters
+  useEffect(() => {
+    let filtered = [...allEvents]
+
+    // Search filter
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase()
+      filtered = filtered.filter(
+        (event) =>
+          event.title.toLowerCase().includes(searchTerm) ||
+          event.description.toLowerCase().includes(searchTerm) ||
+          (event.organizer && event.organizer.toLowerCase().includes(searchTerm)),
+      )
+    }
+
+    // Location filter
+    if (filters.location) {
+      filtered = filtered.filter((event) => event.location === filters.location)
+    }
+
+    // Category filter
+    if (filters.category) {
+      filtered = filtered.filter((event) => {
+        if (!event.tags) return false
+        const tags = typeof event.tags === "string" ? event.tags.split(",") : event.tags
+        return tags.some((tag) => tag.trim() === filters.category)
+      })
+    }
+
+    // Date range filter
+    if (filters.dateRange) {
+      const now = new Date()
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const tomorrow = new Date(today)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+
+      filtered = filtered.filter((event) => {
+        const eventDate = new Date(event.date)
+
+        switch (filters.dateRange) {
+          case "today":
+            return eventDate >= today && eventDate < tomorrow
+          case "tomorrow":
+            const dayAfterTomorrow = new Date(tomorrow)
+            dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1)
+            return eventDate >= tomorrow && eventDate < dayAfterTomorrow
+          case "this-week":
+            const weekEnd = new Date(today)
+            weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()))
+            return eventDate >= today && eventDate <= weekEnd
+          case "next-week":
+            const nextWeekStart = new Date(today)
+            nextWeekStart.setDate(nextWeekStart.getDate() + (7 - nextWeekStart.getDay()) + 1)
+            const nextWeekEnd = new Date(nextWeekStart)
+            nextWeekEnd.setDate(nextWeekEnd.getDate() + 6)
+            return eventDate >= nextWeekStart && eventDate <= nextWeekEnd
+          case "this-month":
+            const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+            return eventDate >= today && eventDate <= monthEnd
+          case "next-month":
+            const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+            const nextMonthEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0)
+            return eventDate >= nextMonthStart && eventDate <= nextMonthEnd
+          default:
+            return true
+        }
+      })
+    }
+
+    // Price range filter
+    if (filters.priceRange) {
+      filtered = filtered.filter((event) => {
+        const price = event.price || 0
+
+        switch (filters.priceRange) {
+          case "free":
+            return price === 0
+          case "0-25":
+            return price >= 0 && price <= 25
+          case "25-50":
+            return price > 25 && price <= 50
+          case "50-100":
+            return price > 50 && price <= 100
+          case "100+":
+            return price > 100
+          default:
+            return true
+        }
+      })
+    }
+
+    // Status filter
+    if (filters.status) {
+      const now = new Date()
+      filtered = filtered.filter((event) => {
+        const eventDate = new Date(event.date)
+        const isUpcoming = eventDate > now
+
+        switch (filters.status) {
+          case "upcoming":
+            return isUpcoming
+          case "past":
+            return !isUpcoming
+          default:
+            return true
+        }
+      })
+    }
+
+    // Organizer filter
+    if (filters.organizer) {
+      filtered = filtered.filter((event) => event.organizer === filters.organizer)
+    }
+
+    setFilteredEvents(filtered)
+  }, [allEvents, filters])
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterType]: value,
+    }))
+  }
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
@@ -100,25 +236,46 @@ export default function EventsPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Upcoming Events</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Discover amazing events happening near you. Join us for unforgettable experiences.
           </p>
         </div>
 
+        {/* Filters Section */}
+        <div className="mb-8">
+          <EventFilters events={allEvents} onFilterChange={handleFilterChange} activeFilters={filters} />
+        </div>
+
+        {/* Results Count */}
+        <div className="mb-6">
+          <p className="text-gray-600">
+            Showing {filteredEvents.length} of {allEvents.length} events
+            {Object.values(filters).some((filter) => filter !== "") && (
+              <span className="text-blue-600 font-medium"> (filtered)</span>
+            )}
+          </p>
+        </div>
+
         {/* Events Grid */}
-        {events.length === 0 ? (
+        {filteredEvents.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
               <Calendar className="w-12 h-12 text-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No events found</h3>
-            <p className="text-gray-600">Check back later for upcoming events.</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {allEvents.length === 0 ? "No events found" : "No events match your filters"}
+            </h3>
+            <p className="text-gray-600">
+              {allEvents.length === 0
+                ? "Check back later for upcoming events."
+                : "Try adjusting your filters to see more events."}
+            </p>
           </div>
         ) : (
           <div className="grid gap-6 md:gap-8 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {events.map((event) => {
+            {filteredEvents.map((event) => {
               const dateInfo = formatDate(event.date)
               const upcoming = isUpcoming(event.date)
 
@@ -138,6 +295,9 @@ export default function EventsPage() {
                               <Badge variant="secondary" className="bg-gray-100 text-gray-600 border-transparent">
                                 Past Event
                               </Badge>
+                            )}
+                            {event.price === 0 && (
+                              <Badge className="bg-blue-100 text-blue-800 border-transparent">Free</Badge>
                             )}
                           </div>
                         </div>
@@ -170,6 +330,12 @@ export default function EventsPage() {
                           <div className="flex items-center gap-2 text-sm text-gray-500">
                             <Users className="w-4 h-4 flex-shrink-0" />
                             <span>{event.attendees} attending</span>
+                          </div>
+                        )}
+
+                        {event.price && event.price > 0 && (
+                          <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
+                            <span>${event.price}</span>
                           </div>
                         )}
                       </div>
