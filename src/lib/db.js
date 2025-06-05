@@ -27,6 +27,7 @@ if (!tableCheck) {
       FOREIGN KEY (event_id) REFERENCES events(id)
     );
 
+    
     INSERT INTO events (title, description, location, date)
     VALUES
       ('React Meetup', 'Learn React tricks', 'Pune', '2025-06-01'),

@@ -8,12 +8,15 @@ import { Users, Shield, Calendar, MapPin, Clock, Star, ArrowRight, Sparkles } fr
 export default function Home() {
   const [mounted, setMounted] = useState(false)
 
+// animations will only apply after the component mounts
   useEffect(() => {
     setMounted(true)
   }, [])
 
   if (!mounted) return null
 
+
+  // Below written are the animations for landing page:
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
